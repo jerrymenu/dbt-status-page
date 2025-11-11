@@ -1,0 +1,34 @@
+name: Build dbt status page
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"   # every 10 minutes
+  workflow_dispatch:          # allow manual runs
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install requests jinja2
+      - name: Generate status
+        env:
+          DBT_CLOUD_TOKEN: ${{ secrets.DBT_CLOUD_TOKEN }}
+          DBT_CLOUD_ACCOUNT_ID: ${{ secrets.DBT_CLOUD_ACCOUNT_ID }}
+          DBT_CLOUD_JOB_IDS: ${{ secrets.DBT_CLOUD_JOB_IDS }}   # example: 12345,56789
+        run: python .statuspage/fetch_status.py
+      - name: Publish to gh-pages
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -B gh-pages
+          cp -r .statuspage/out/* .
+          git add index.html status.json
+          git commit -m "Update status page" || true
+          git push -f origin gh-pages
