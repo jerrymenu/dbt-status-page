@@ -60,10 +60,11 @@ for jid in JOB_IDS:
         rows.append({"job_id": jid, "job_name": jid, "color": "grey", "reason": "no runs"})
         continue
     color, reason, failed_tests, freshness = parse_status(run)
+    job_data = run.get("job") or {}
     rows.append({
         "job_id": jid,
         "run_id": run["id"],
-        "job_name": run.get("job", {}).get("name") or jid,
+        "job_name": job_data.get("name") or jid,
         "color": color,
         "reason": reason,
         "failed_tests": failed_tests,
