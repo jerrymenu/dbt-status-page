@@ -12,7 +12,7 @@ S.headers.update({"Authorization": f"Token {TOKEN}"})
 
 def latest_run(job_id):
     r = S.get(f"{BASE}/accounts/{ACCOUNT}/runs/",
-              params={"job_definition_id": job_id, "order_by": "-started_at", "limit": 1},
+              params={"job_definition_id": job_id, "order_by": "-finished_at", "limit": 1},
               timeout=30)
     r.raise_for_status()
     data = r.json().get("data", [])
