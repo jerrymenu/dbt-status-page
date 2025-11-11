@@ -21,6 +21,7 @@ jobs:
         env:
           DBT_CLOUD_TOKEN: ${{ secrets.DBT_CLOUD_TOKEN }}
           DBT_CLOUD_ACCOUNT_ID: ${{ secrets.DBT_CLOUD_ACCOUNT_ID }}
+          DBT_JOB_MAP: ${{ secrets.DBT_JOB_MAP }}
           DBT_CLOUD_JOB_IDS: ${{ secrets.DBT_CLOUD_JOB_IDS }}   # example: 12345,56789
         run: python .statuspage/fetch_status.py
       - name: Publish to gh-pages
