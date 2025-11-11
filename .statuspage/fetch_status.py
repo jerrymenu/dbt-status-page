@@ -5,7 +5,16 @@ from jinja2 import Template
 BASE = "https://vx961.us1.dbt.com/api/v2"
 TOKEN = os.environ["DBT_CLOUD_TOKEN"]
 ACCOUNT = os.environ["DBT_CLOUD_ACCOUNT_ID"]
-JOB_IDS = [j.strip() for j in os.environ["DBT_CLOUD_JOB_IDS"].split(",")]
+
+try:
+    JOB_MAP = json.loads(os.environ.get("DBT_JOB_MAP", "{}") or "{}")
+except json.JSONDecodeError:
+    JOB_MAP = {}
+
+if JOB_MAP:
+    JOB_IDS = list(JOB_MAP.keys())
+else:
+    JOB_IDS = [j.strip() for j in os.environ["DBT_CLOUD_JOB_IDS"].split(",")]
 
 S = requests.Session()
 S.headers.update({"Authorization": f"Token {TOKEN}"})
@@ -57,14 +66,14 @@ rows = []
 for jid in JOB_IDS:
     run = latest_run(jid)
     if not run:
-        rows.append({"job_id": jid, "job_name": jid, "color": "grey", "reason": "no runs"})
+        rows.append({"job_id": jid, "job_name": JOB_MAP.get(jid, jid), "color": "grey", "reason": "no runs"})
         continue
     color, reason, failed_tests, freshness = parse_status(run)
     job_data = run.get("job") or {}
     rows.append({
         "job_id": jid,
         "run_id": run["id"],
-        "job_name": job_data.get("name") or jid,
+        "job_name": JOB_MAP.get(jid) or job_data.get("name") or jid,
         "color": color,
         "reason": reason,
         "failed_tests": failed_tests,
