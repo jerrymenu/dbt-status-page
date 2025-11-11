@@ -2,7 +2,7 @@ import os, json, time, requests
 from datetime import datetime, timezone
 from jinja2 import Template
 
-BASE = "https://cloud.getdbt.com/api/v2"
+BASE = "https://vx961.us1.dbt.com/api/v2"
 TOKEN = os.environ["DBT_CLOUD_TOKEN"]
 ACCOUNT = os.environ["DBT_CLOUD_ACCOUNT_ID"]
 JOB_IDS = [j.strip() for j in os.environ["DBT_CLOUD_JOB_IDS"].split(",")]
