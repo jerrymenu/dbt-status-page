@@ -44,8 +44,17 @@ def parse_status(run):
     sources = get_artifact(run["id"], "sources.json") or {}
     freshness = "unknown"
     if "sources" in sources:
-        # pass if every source status is pass
+        # legacy schema: pass if every source status is pass
         freshness = "ok" if all(s.get("status") == "pass" for s in sources["sources"]) else "fail"
+    elif "results" in sources:
+        statuses = [r.get("status") for r in sources["results"] if r.get("status")]
+        if statuses:
+            if any(s == "error" for s in statuses):
+                freshness = "fail"
+            elif any(s == "warn" for s in statuses):
+                freshness = "amber"
+            else:
+                freshness = "ok"
 
     color, reason = "grey", "no data"
     if in_progress:
