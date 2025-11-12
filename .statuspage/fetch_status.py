@@ -1,4 +1,5 @@
 import os, json, time, requests
+from collections import Counter
 from datetime import datetime, timezone
 from jinja2 import Template
 
@@ -43,18 +44,35 @@ def parse_status(run):
 
     sources = get_artifact(run["id"], "sources.json") or {}
     freshness = "unknown"
+    freshness_detail = ""
     if "sources" in sources:
         # legacy schema: pass if every source status is pass
         freshness = "ok" if all(s.get("status") == "pass" for s in sources["sources"]) else "fail"
+        failing_sources = [s for s in sources["sources"] if s.get("status") != "pass"]
+        if failing_sources:
+            fs = failing_sources[0]
+            name = fs.get("name") or fs.get("source_name") or fs.get("unique_id") or "source"
+            freshness_detail = f"{name} {fs.get('status')}"
     elif "results" in sources:
-        statuses = [r.get("status") for r in sources["results"] if r.get("status")]
-        if statuses:
-            if any(s == "error" for s in statuses):
+        results = [r for r in sources["results"] if r.get("status")]
+        if results:
+            severity = {"error": 3, "warn": 2, "pass": 1}
+            worst = max(results, key=lambda r: severity.get((r.get("status") or "").lower(), 0))
+            worst_status = (worst.get("status") or "").lower()
+            if worst_status == "error":
                 freshness = "fail"
-            elif any(s == "warn" for s in statuses):
+            elif worst_status == "warn":
                 freshness = "amber"
-            else:
+            elif worst_status == "pass":
                 freshness = "ok"
+            name = worst.get("source_name") or worst.get("name") or worst.get("unique_id") or "source"
+            time_ago = worst.get("max_loaded_at_time_ago_in_words")
+            freshness_detail = name
+            label = "fresh" if worst_status == "pass" else worst_status
+            if label:
+                freshness_detail += f" {label}"
+            if time_ago:
+                freshness_detail += f" ({time_ago})"
 
     color, reason = "grey", "no data"
     if in_progress:
@@ -69,16 +87,33 @@ def parse_status(run):
     else:
         color, reason = "amber", f"status {status}"
 
-    return color, reason, failed_tests, freshness
+    return color, reason, failed_tests, freshness, freshness_detail
 
 rows = []
 for jid in JOB_IDS:
     run = latest_run(jid)
     if not run:
-        rows.append({"job_id": jid, "job_name": JOB_MAP.get(jid, jid), "color": "grey", "reason": "no runs"})
+        rows.append({
+            "job_id": jid,
+            "run_id": None,
+            "job_name": JOB_MAP.get(jid, jid),
+            "color": "grey",
+            "reason": "no runs",
+            "failed_tests": "-",
+            "freshness": "unknown",
+            "freshness_detail": "",
+            "freshness_display": "unknown",
+            "started_at": None,
+            "finished_at": None,
+            "in_progress": False,
+            "href": f"https://cloud.getdbt.com/#/accounts/{ACCOUNT}/jobs/{jid}"
+        })
         continue
-    color, reason, failed_tests, freshness = parse_status(run)
+    color, reason, failed_tests, freshness, freshness_detail = parse_status(run)
     job_data = run.get("job") or {}
+    freshness_display = freshness
+    if freshness_detail:
+        freshness_display = f"{freshness}: {freshness_detail}"
     rows.append({
         "job_id": jid,
         "run_id": run["id"],
@@ -87,6 +122,8 @@ for jid in JOB_IDS:
         "reason": reason,
         "failed_tests": failed_tests,
         "freshness": freshness,
+        "freshness_detail": freshness_detail,
+        "freshness_display": freshness_display,
         "started_at": run.get("started_at"),
         "finished_at": run.get("finished_at"),
         "in_progress": run.get("is_complete") is False,
@@ -95,10 +132,24 @@ for jid in JOB_IDS:
 
 priority = {"red": 3, "amber": 2, "green": 1, "grey": 0}
 overall = max(rows, key=lambda r: priority.get(r["color"], 0))["color"] if rows else "grey"
+color_counts = Counter(r["color"] for r in rows)
+total_jobs = len(rows)
+summary_parts = [f"{total_jobs} job{'s' if total_jobs != 1 else ''}"]
+for color in ["green", "amber", "red", "grey"]:
+    count = color_counts.get(color, 0)
+    if count:
+        summary_parts.append(f"{count} {color}")
+summary_text = " · ".join(summary_parts)
 
 os.makedirs(".statuspage/out", exist_ok=True)
 with open(".statuspage/out/status.json", "w") as f:
-    json.dump({"overall": overall, "generated_at": int(time.time()), "jobs": rows}, f, indent=2)
+    json.dump({
+        "overall": overall,
+        "generated_at": int(time.time()),
+        "total_jobs": total_jobs,
+        "counts": dict(color_counts),
+        "jobs": rows
+    }, f, indent=2)
 
 html = Template("""
 <!doctype html><meta charset="utf-8"><title>dbt Status</title>
@@ -112,6 +163,7 @@ a{color:inherit}
 </style>
 <h1>dbt Status <span class="pill {{overall}}">{{overall|capitalize}}</span></h1>
 <p>Updated {{updated}} UTC</p>
+<p>{{summary}}</p>
 <table>
 <thead><tr><th>Job</th><th>Status</th><th>Reason</th><th>Tests</th><th>Freshness</th><th>Started</th><th>Finished</th></tr></thead>
 <tbody>
@@ -121,7 +173,7 @@ a{color:inherit}
   <td><span class="pill {{j.color}}">{{j.color|capitalize}}</span></td>
   <td>{{j.reason}}</td>
   <td>{{j.failed_tests}}</td>
-  <td>{{j.freshness}}</td>
+  <td>{{j.freshness_display}}</td>
   <td>{{j.started_at or "-"}}</td>
   <td>{{j.finished_at or "-"}}</td>
 </tr>
@@ -130,6 +182,7 @@ a{color:inherit}
 """).render(
     overall=overall,
     jobs=rows,
+    summary=summary_text,
     updated=datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 )
 with open(".statuspage/out/index.html", "w") as f:
