@@ -1,0 +1,85 @@
+{
+  "overall": "green",
+  "generated_at": 1795255846,
+  "total_jobs": 5,
+  "counts": {
+    "green": 5
+  },
+  "jobs": [
+    {
+      "job_id": "712235",
+      "run_id": 70471907567683,
+      "job_name": "UDP APAC - Clone and Swap Reporting Schemas",
+      "color": "green",
+      "reason": "last run success",
+      "failed_tests": 0,
+      "freshness": "unknown",
+      "freshness_detail": "",
+      "freshness_display": "unknown",
+      "started_at": "2026-11-21 01:50:54.646584+00:00",
+      "finished_at": "2026-11-21 01:59:41.755303+00:00",
+      "in_progress": false,
+      "href": "https://cloud.getdbt.com/#/accounts/2196/jobs/712235/runs/70471907567683"
+    },
+    {
+      "job_id": "70471823460980",
+      "run_id": 70471907567082,
+      "job_name": "UDP APAC - Build Beta Models",
+      "color": "green",
+      "reason": "last run success",
+      "failed_tests": 0,
+      "freshness": "unknown",
+      "freshness_detail": "",
+      "freshness_display": "unknown",
+      "started_at": "2026-11-21 01:41:04.856199+00:00",
+      "finished_at": "2026-11-21 01:50:43.013181+00:00",
+      "in_progress": false,
+      "href": "https://cloud.getdbt.com/#/accounts/2196/jobs/70471823460980/runs/70471907567082"
+    },
+    {
+      "job_id": "699873",
+      "run_id": 70471906098253,
+      "job_name": "UDP APAC - Build Stable Models - Forced Full refresh",
+      "color": "green",
+      "reason": "last run success",
+      "failed_tests": 0,
+      "freshness": "unknown",
+      "freshness_detail": "",
+      "freshness_display": "unknown",
+      "started_at": "2026-11-11 08:06:53.752596+00:00",
+      "finished_at": "2026-11-11 08:15:49.440816+00:00",
+      "in_progress": false,
+      "href": "https://cloud.getdbt.com/#/accounts/2196/jobs/699873/runs/70471906098253"
+    },
+    {
+      "job_id": "668945",
+      "run_id": 70471907566693,
+      "job_name": "UDP APAC - Build Stable Models - Incremental",
+      "color": "green",
+      "reason": "last run success",
+      "failed_tests": 0,
+      "freshness": "unknown",
+      "freshness_detail": "",
+      "freshness_display": "unknown",
+      "started_at": "2026-11-21 01:34:09.782533+00:00",
+      "finished_at": "2026-11-21 01:40:56.838839+00:00",
+      "in_progress": false,
+      "href": "https://cloud.getdbt.com/#/accounts/2196/jobs/668945/runs/70471907566693"
+    },
+    {
+      "job_id": "741220",
+      "run_id": 70471907596752,
+      "job_name": "UPD APAC - Build Venue Merging Models - Full Refresh",
+      "color": "green",
+      "reason": "last run success",
+      "failed_tests": 0,
+      "freshness": "unknown",
+      "freshness_detail": "",
+      "freshness_display": "unknown",
+      "started_at": "2026-11-21 07:00:12.475465+00:00",
+      "finished_at": "2026-11-21 10:05:53.411088+00:00",
+      "in_progress": false,
+      "href": "https://cloud.getdbt.com/#/accounts/2196/jobs/741220/runs/70471907596752"
+    }
+  ]
+}
